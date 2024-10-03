@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Personal Assistant</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #282c34;
+            color: #61dafb;
+            text-align: center;
+            padding: 50px;
+        }
+
+        #container {
+            background-color: #20232a;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            display: inline-block;
+            max-width: 600px;
+            width: 100%;
+            animation: fadeIn 2s ease-in-out;
+        }
+
+        h1 {
+            font-size: 36px;
+            margin-bottom: 20px;
+            animation: bounce 1s infinite;
+        }
+
+        input[type="text"] {
+            width: 80%;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            margin-top: 20px;
+            font-size: 16px;
+            text-align: center;
+            color: #20232a;
+            background-color: #61dafb;
+        }
+
+        button {
+            background-color: #61dafb;
+            border: none;
+            color: #20232a;
+            padding: 15px 32px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            border-radius: 5px;
+            margin-top: 20px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #52c2e2;
+        }
+
+        #response {
+            margin-top: 30px;
+            font-size: 20px;
+            animation: slideIn 1s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-20px); }
+            60% { transform: translateY(-10px); }
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(-100%); }
+            to { transform: translateX(0); }
+        }
+
+        .speech-circle {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background-color: #61dafb;
+            display: inline-block;
+            animation: pulse 1.5s infinite;
+            position: relative;
+        }
+
+        .speech-circle::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 40px;
+            height: 40px;
+            background: url('mic.png') no-repeat center center;
+            background-size: contain;
+            transform: translate(-50%, -50%);
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+    </style>
+    <script>
+        function startDictation() {
+            if (window.hasOwnProperty('webkitSpeechRecognition')) {
+                var recognition = new webkitSpeechRecognition();
+
+                recognition.continuous = false;
+                recognition.interimResults = false;
+
+                recognition.lang = "en-US";
+                recognition.start();
+
+                recognition.onresult = function(e) {
+                    var command = e.results[0][0].transcript;
+                    document.getElementById('transcript').value = command;
+                    recognition.stop();
+
+                    fetch('/process', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ command: command }),
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        document.getElementById('response').innerText = data.response;
+                        var msg = new SpeechSynthesisUtterance(data.response);
+                        window.speechSynthesis.speak(msg);
+                    })
+                    .catch((error) => {
+                        console.error('Error:', error);
+                    });
+                };
+
+                recognition.onerror = function(e) {
+                    recognition.stop();
+                }
+            }
+        }
+    </script>
+</head>
+<body>
+    <div id="container">
+        <h1>AI Personal Assistant</h1>
+        <div class="speech-circle" onclick="startDictation()"></div>
+        <input type="text" id="transcript" placeholder="Your command will appear here" size="50" readonly>
+        <p id="response"></p>
+    </div>
+</body>
+</html>
